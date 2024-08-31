@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fixed Virtual Park Walk-through - Amsterdamse Bos</title>
+    <title>Simplified Virtual Park Walk-through - Amsterdamse Bos</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
     <style>
@@ -75,22 +75,9 @@
             maxZoom: 19
         }).addTo(map);
 
-        L.circle(parkCenter, {
-            color: 'red',
-            fillColor: '#f03',
-            fillOpacity: 0.1,
-            radius: 2000
-        }).addTo(map);
-
-        const customIcon = L.divIcon({
-            className: 'custom-icon',
-            iconSize: [20, 20],
-            iconAnchor: [10, 10]
-        });
-
         pointsOfInterest.forEach(poi => {
-            const marker = L.marker(poi.location, {icon: customIcon}).addTo(map);
-            marker.on('click', () => showInfo(poi));
+            L.marker(poi.location).addTo(map)
+             .bindPopup(`<b>${poi.name}</b><br>${poi.description}`);
         });
 
         function showInfo(poi) {
@@ -99,15 +86,6 @@
                 <h2>${poi.name}</h2>
                 <p>${poi.description}</p>
             `;
-        }
-
-        if ("geolocation" in navigator) {
-            navigator.geolocation.watchPosition(position => {
-                const { latitude, longitude } = position.coords;
-                L.marker([latitude, longitude]).addTo(map)
-                    .bindPopup('You are here')
-                    .openPopup();
-            }, null, { enableHighAccuracy: true });
         }
     </script>
 </body>
