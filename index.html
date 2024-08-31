@@ -38,7 +38,7 @@
 
     <script>
         const parkCenter = [52.340589, 4.814953];
-        const zoomLevel = 15;  // Slightly zoomed out to show the entire square
+        const zoomLevel = 15;
 
         const pointsOfInterest = [
             {
@@ -71,8 +71,8 @@
         }).addTo(map);
 
         // Add a square (rectangle) centered on parkCenter
-        const squareSideKm = 2;  // 2km side length
-        const latDelta = squareSideKm / 111.32;  // rough approximation: 1 degree lat = 111.32 km
+        const squareSideKm = 2;
+        const latDelta = squareSideKm / 111.32;
         const lonDelta = squareSideKm / (111.32 * Math.cos(parkCenter[0] * (Math.PI / 180)));
         const bounds = [
             [parkCenter[0] - latDelta/2, parkCenter[1] - lonDelta/2],
@@ -84,6 +84,38 @@
             L.marker(poi.location).addTo(map)
              .bindPopup(`<b>${poi.name}</b><br>${poi.description}`);
         });
+
+        // Geolocation
+        let userMarker, userCircle;
+        
+        function onLocationFound(e) {
+            const radius = e.accuracy / 2;
+
+            if (userMarker) {
+                map.removeLayer(userMarker);
+                map.removeLayer(userCircle);
+            }
+
+            userMarker = L.marker(e.latlng).addTo(map)
+                .bindPopup("You are within " + radius + " meters from this point").openPopup();
+
+            userCircle = L.circle(e.latlng, {
+                radius: radius,
+                color: 'blue',
+                fillColor: '#3af',
+                fillOpacity: 0.2
+            }).addTo(map);
+        }
+
+        function onLocationError(e) {
+            alert(e.message);
+        }
+
+        map.on('locationfound', onLocationFound);
+        map.on('locationerror', onLocationError);
+
+        // Start locating
+        map.locate({setView: true, maxZoom: 16, watch: true, maximumAge: 60000});
 
         function showInfo(poi) {
             const infoPanel = document.getElementById('info');
