@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Virtual Park Walk-through - Amsterdamse Bos</title>
+    <title>Focused Virtual Park Walk-through - Amsterdamse Bos</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
     <style>
@@ -30,15 +30,29 @@
             overflow-y: auto;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
+        #permission-button {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
     <div id="map"></div>
     <div id="info" class="info-panel"></div>
+    <button id="permission-button" style="display: none;">Enable Location</button>
 
     <script>
         const parkCenter = [52.340589, 4.814953];
-        const zoomLevel = 15;
+        const zoomLevel = 16;
 
         const pointsOfInterest = [
             {
@@ -70,22 +84,26 @@
             maxZoom: 19
         }).addTo(map);
 
-        // Add a square (rectangle) centered on parkCenter
-        const squareSideKm = 2;
+        // Add a 1km x 1km square centered on parkCenter
+        const squareSideKm = 1;
         const latDelta = squareSideKm / 111.32;
         const lonDelta = squareSideKm / (111.32 * Math.cos(parkCenter[0] * (Math.PI / 180)));
         const bounds = [
             [parkCenter[0] - latDelta/2, parkCenter[1] - lonDelta/2],
             [parkCenter[0] + latDelta/2, parkCenter[1] + lonDelta/2]
         ];
-        L.rectangle(bounds, {color: "#ff7800", weight: 1, fillOpacity: 0.1}).addTo(map);
+
+        // Add a dark overlay to the entire map
+        L.rectangle([[-90, -180], [90, 180]], {color: "black", weight: 0, fillOpacity: 0.7}).addTo(map);
+
+        // Add a clear rectangle for the focus area
+        L.rectangle(bounds, {color: "white", weight: 2, fillOpacity: 0}).addTo(map);
 
         pointsOfInterest.forEach(poi => {
             L.marker(poi.location).addTo(map)
              .bindPopup(`<b>${poi.name}</b><br>${poi.description}`);
         });
 
-        // Geolocation
         let userMarker, userCircle;
         
         function onLocationFound(e) {
@@ -108,14 +126,24 @@
         }
 
         function onLocationError(e) {
-            alert(e.message);
+            console.log("Location error: ", e.message);
+            document.getElementById('permission-button').style.display = 'block';
         }
 
         map.on('locationfound', onLocationFound);
         map.on('locationerror', onLocationError);
 
-        // Start locating
-        map.locate({setView: true, maxZoom: 16, watch: true, maximumAge: 60000});
+        function requestLocation() {
+            map.locate({setView: true, maxZoom: 16, watch: true, maximumAge: 60000});
+        }
+
+        document.getElementById('permission-button').addEventListener('click', function() {
+            requestLocation();
+            this.style.display = 'none';
+        });
+
+        // Initial location request
+        requestLocation();
 
         function showInfo(poi) {
             const infoPanel = document.getElementById('info');
