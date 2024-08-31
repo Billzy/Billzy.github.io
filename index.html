@@ -48,7 +48,7 @@
 <body>
     <div id="map"></div>
     <div id="info" class="info-panel"></div>
-    <button id="permission-button" style="display: none;">Enable Location</button>
+    <button id="permission-button">Enable Location</button>
 
     <script>
         const parkCenter = [52.340589, 4.814953];
@@ -105,18 +105,14 @@
             pane: 'darkOverlay'
         }).addTo(map);
 
-        // Create a mask for the focus area
+        // Clear the focus area
         L.rectangle(bounds, {
-            color: "black",
-            weight: 0,
-            fillOpacity: 1,
+            color: "white",
+            weight: 2,
+            fillOpacity: 0,
             pane: 'darkOverlay',
-            fillRule: 'evenodd',
-            fill: 'url(#mask)'
+            fillRule: 'evenodd'
         }).addTo(map);
-
-        // Add a white border for the focus area
-        L.rectangle(bounds, {color: "white", weight: 2, fillOpacity: 0}).addTo(map);
 
         pointsOfInterest.forEach(poi => {
             L.marker(poi.location).addTo(map)
@@ -180,8 +176,8 @@
             requestLocation();
         });
 
-        // Initial location request
-        requestLocation();
+        // Enable location request on button click
+        document.getElementById('permission-button').style.display = 'block';
 
         function showInfo(poi) {
             const infoPanel = document.getElementById('info');
