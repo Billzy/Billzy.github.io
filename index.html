@@ -129,8 +129,8 @@
         }
 
         function onLocationError(e) {
+            alert("Unable to retrieve your location: " + e.message);
             console.log("Location error: ", e.message);
-            document.getElementById('permission-button').style.display = 'block';
         }
 
         map.on('locationfound', onLocationFound);
@@ -149,11 +149,12 @@
                     },
                     {
                         enableHighAccuracy: true,
-                        timeout: 5000,
+                        timeout: 10000,  // increased timeout
                         maximumAge: 0
                     }
                 );
             } else {
+                alert("Geolocation is not supported by this browser.");
                 console.log("Geolocation is not supported by this browser.");
             }
         }
@@ -161,9 +162,6 @@
         document.getElementById('permission-button').addEventListener('click', function() {
             requestLocation();
         });
-
-        // Enable location request on button click
-        document.getElementById('permission-button').style.display = 'block';
 
         function showInfo(poi) {
             const infoPanel = document.getElementById('info');
