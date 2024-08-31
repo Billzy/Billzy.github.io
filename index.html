@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simplified Virtual Park Walk-through - Amsterdamse Bos</title>
+    <title>Virtual Park Walk-through - Amsterdamse Bos</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
     <style>
@@ -30,11 +30,6 @@
             overflow-y: auto;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
-        .custom-icon {
-            background-color: #4CAF50;
-            border-radius: 50%;
-            border: 2px solid #ffffff;
-        }
     </style>
 </head>
 <body>
@@ -43,7 +38,7 @@
 
     <script>
         const parkCenter = [52.340589, 4.814953];
-        const zoomLevel = 16;
+        const zoomLevel = 15;  // Slightly zoomed out to show the entire square
 
         const pointsOfInterest = [
             {
@@ -74,6 +69,16 @@
             attribution: '© OpenStreetMap contributors',
             maxZoom: 19
         }).addTo(map);
+
+        // Add a square (rectangle) centered on parkCenter
+        const squareSideKm = 2;  // 2km side length
+        const latDelta = squareSideKm / 111.32;  // rough approximation: 1 degree lat = 111.32 km
+        const lonDelta = squareSideKm / (111.32 * Math.cos(parkCenter[0] * (Math.PI / 180)));
+        const bounds = [
+            [parkCenter[0] - latDelta/2, parkCenter[1] - lonDelta/2],
+            [parkCenter[0] + latDelta/2, parkCenter[1] + lonDelta/2]
+        ];
+        L.rectangle(bounds, {color: "#ff7800", weight: 1, fillOpacity: 0.1}).addTo(map);
 
         pointsOfInterest.forEach(poi => {
             L.marker(poi.location).addTo(map)
