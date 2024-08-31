@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Virtual Park Walk-through</title>
+    <title>Virtual Park Walk-through - Amsterdam</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
     <style>
         body, html {
             height: 100%;
@@ -48,22 +48,22 @@
 
     <script>
         // Configuration
-        const parkCenter = [40.7812, -73.9665]; // Central Park, NY as an example
+        const parkCenter = [52.340589, 4.814953]; // Updated to provided coordinates
         const zoomLevel = 15;
         
         // Points of Interest
         const pointsOfInterest = [
             {
-                name: "Bethesda Fountain",
-                location: [40.7735, -73.9708],
-                description: "Bethesda Fountain is one of Central Park's most famous and beloved attractions.",
-                image: "https://via.placeholder.com/300x200.png?text=Bethesda+Fountain"
+                name: "Amsterdamse Bos",
+                location: [52.3406, 4.8150],
+                description: "Amsterdamse Bos is a large recreational park in Amsterdam.",
+                image: "https://via.placeholder.com/300x200.png?text=Amsterdamse+Bos"
             },
             {
-                name: "Belvedere Castle",
-                location: [40.7794, -73.9690],
-                description: "Belvedere Castle offers some of the best and highest views of Central Park.",
-                image: "https://via.placeholder.com/300x200.png?text=Belvedere+Castle"
+                name: "Bosbaan",
+                location: [52.3378, 4.8273],
+                description: "Bosbaan is a rowing course in the Amsterdamse Bos.",
+                image: "https://via.placeholder.com/300x200.png?text=Bosbaan"
             },
             // Add more points of interest here
         ];
@@ -71,12 +71,9 @@
         // Initialize map
         const map = L.map('map').setView(parkCenter, zoomLevel);
 
-        // Add Stamen Toner tile layer
-        L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/toner/{z}/{x}/{y}{r}.png', {
-            attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-            subdomains: 'abcd',
-            minZoom: 0,
-            maxZoom: 20
+        // Add OpenStreetMap tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
         }).addTo(map);
 
         // Custom icon for markers
