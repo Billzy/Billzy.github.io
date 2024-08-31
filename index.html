@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Improved Focused Virtual Park Walk-through - Amsterdamse Bos</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
+    <title>3D Map with Points of Interest</title>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css' rel='stylesheet' />
+    <script src='https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js'></script>
     <style>
         body, html {
             height: 100%;
@@ -17,159 +17,144 @@
             height: 100%;
             width: 100%;
         }
-        .info-panel {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            z-index: 1000;
-            background: white;
-            padding: 10px;
-            border-radius: 5px;
-            max-width: 300px;
-            max-height: 400px;
-            overflow-y: auto;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        .mapboxgl-popup-content {
+            text-align: center;
+            font-family: 'Open Sans', sans-serif;
         }
-        #permission-button {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
-            padding: 10px 20px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
+        .mapboxgl-popup-content img {
+            max-width: 100%;
+            height: auto;
+            margin-bottom: 10px;
         }
     </style>
 </head>
 <body>
+
     <div id="map"></div>
-    <div id="info" class="info-panel"></div>
-    <button id="permission-button">Enable Location</button>
 
     <script>
-        const parkCenter = [52.340589, 4.814953];
-        const zoomLevel = 16;
+        mapboxgl.accessToken = 'racheldennis.ggg80i13';
 
+        const map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/streets-v12', // Mapbox style
+            center: [4.814953, 52.340589], // [longitude, latitude] of parkCenter
+            zoom: 16,
+            pitch: 60, // Tilt the map for 3D effect
+            bearing: -60 // Rotate the map
+        });
+
+        // Add zoom and rotation controls to the map
+        map.addControl(new mapboxgl.NavigationControl());
+
+        // Add 3D buildings layer
+        map.on('load', function () {
+            // Insert the layer beneath any symbol layer.
+            const layers = map.getStyle().layers;
+            let labelLayerId;
+            for (let i = 0; i < layers.length; i++) {
+                if (layers[i].type === 'symbol' && layers[i].layout['text-field']) {
+                    labelLayerId = layers[i].id;
+                    break;
+                }
+            }
+
+            map.addLayer({
+                'id': '3d-buildings',
+                'source': 'composite',
+                'source-layer': 'building',
+                'filter': ['==', 'extrude', 'true'],
+                'type': 'fill-extrusion',
+                'minzoom': 15,
+                'paint': {
+                    'fill-extrusion-color': '#aaa',
+                    'fill-extrusion-height': [
+                        'interpolate', ['linear'], ['zoom'],
+                        15, 0,
+                        15.05, ['get', 'height']
+                    ],
+                    'fill-extrusion-base': [
+                        'interpolate', ['linear'], ['zoom'],
+                        15, 0,
+                        15.05, ['get', 'min_height']
+                    ],
+                    'fill-extrusion-opacity': 0.6
+                }
+            }, labelLayerId);
+        });
+
+        // Define the points of interest with image and description
         const pointsOfInterest = [
             {
                 name: "Point of Interest 1",
-                location: [52.34068518349773, 4.814967357627049],
+                coordinates: [4.814967357627049, 52.34068518349773],
                 description: "This is the first point of interest in Amsterdamse Bos.",
+                image: "https://via.placeholder.com/300x200.png?text=Point+1"
             },
             {
                 name: "Point of Interest 2",
-                location: [52.3408081232501, 4.816352161023659],
+                coordinates: [4.816352161023659, 52.3408081232501],
                 description: "This is the second point of interest in Amsterdamse Bos.",
+                image: "https://via.placeholder.com/300x200.png?text=Point+2"
             },
             {
                 name: "Point of Interest 3",
-                location: [52.341420489919074, 4.813434012011979],
+                coordinates: [4.813434012011979, 52.341420489919074],
                 description: "This is the third point of interest in Amsterdamse Bos.",
+                image: "https://via.placeholder.com/300x200.png?text=Point+3"
             },
             {
                 name: "Point of Interest 4",
-                location: [52.34023125357226, 4.814033551508082],
+                coordinates: [4.814033551508082, 52.34023125357226],
                 description: "This is the fourth point of interest in Amsterdamse Bos.",
+                image: "https://via.placeholder.com/300x200.png?text=Point+4"
             }
         ];
 
-        const map = L.map('map').setView(parkCenter, zoomLevel);
-
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors',
-            maxZoom: 19
-        }).addTo(map);
-
-        // Add a 1km x 1km square centered on parkCenter
-        const squareSideKm = 1;
-        const latDelta = squareSideKm / 111.32;
-        const lonDelta = squareSideKm / (111.32 * Math.cos(parkCenter[0] * (Math.PI / 180)));
-        const bounds = [
-            [parkCenter[0] - latDelta/2, parkCenter[1] - lonDelta/2],
-            [parkCenter[0] + latDelta/2, parkCenter[1] + lonDelta/2]
-        ];
-
-        // Clear the focus area
-        L.rectangle(bounds, {
-            color: "white",
-            weight: 2,
-            fillOpacity: 0,
-        }).addTo(map);
-
+        // Add markers to the map for each point of interest
         pointsOfInterest.forEach(poi => {
-            L.marker(poi.location).addTo(map)
-             .bindPopup(`<b>${poi.name}</b><br>${poi.description}`);
+            const el = document.createElement('div');
+            el.className = 'marker';
+
+            new mapboxgl.Marker(el)
+                .setLngLat(poi.coordinates)
+                .setPopup(new mapboxgl.Popup({ offset: 25 }) // Add popups
+                    .setHTML(`
+                        <h3>${poi.name}</h3>
+                        <img src="${poi.image}" alt="${poi.name}">
+                        <p>${poi.description}</p>
+                    `))
+                .addTo(map);
         });
 
-        let userMarker, userCircle;
+        // Event listener for adding new points
+        map.on('click', function (e) {
+            const coordinates = e.lngLat;
+            const name = prompt("Enter the name for this point:");
+            const description = prompt("Enter a description for this point:");
+            const imageUrl = prompt("Enter the image URL for this point:");
 
-        function onLocationFound(e) {
-            const radius = e.accuracy / 2;
+            if (name && description && imageUrl) {
+                const newPoi = {
+                    name: name,
+                    coordinates: [coordinates.lng, coordinates.lat],
+                    description: description,
+                    image: imageUrl
+                };
 
-            if (userMarker) {
-                map.removeLayer(userMarker);
-                map.removeLayer(userCircle);
+                pointsOfInterest.push(newPoi);
+
+                new mapboxgl.Marker()
+                    .setLngLat(newPoi.coordinates)
+                    .setPopup(new mapboxgl.Popup({ offset: 25 })
+                        .setHTML(`
+                            <h3>${newPoi.name}</h3>
+                            <img src="${newPoi.image}" alt="${newPoi.name}">
+                            <p>${newPoi.description}</p>
+                        `))
+                    .addTo(map);
             }
-
-            userMarker = L.marker(e.latlng).addTo(map)
-                .bindPopup("You are within " + radius + " meters from this point").openPopup();
-
-            userCircle = L.circle(e.latlng, {
-                radius: radius,
-                color: 'blue',
-                fillColor: '#3af',
-                fillOpacity: 0.2
-            }).addTo(map);
-
-            map.setView(e.latlng, zoomLevel);
-        }
-
-        function onLocationError(e) {
-            alert("Unable to retrieve your location: " + e.message);
-            console.log("Location error: ", e.message);
-        }
-
-        map.on('locationfound', onLocationFound);
-        map.on('locationerror', onLocationError);
-
-        function requestLocation() {
-            if ("geolocation" in navigator) {
-                navigator.geolocation.getCurrentPosition(
-                    function(position) {
-                        const lat = position.coords.latitude;
-                        const lon = position.coords.longitude;
-                        onLocationFound({latlng: L.latLng(lat, lon), accuracy: position.coords.accuracy});
-                    },
-                    function(error) {
-                        onLocationError(error);
-                    },
-                    {
-                        enableHighAccuracy: true,
-                        timeout: 10000,  // increased timeout
-                        maximumAge: 0
-                    }
-                );
-            } else {
-                alert("Geolocation is not supported by this browser.");
-                console.log("Geolocation is not supported by this browser.");
-            }
-        }
-
-        document.getElementById('permission-button').addEventListener('click', function() {
-            requestLocation();
         });
-
-        function showInfo(poi) {
-            const infoPanel = document.getElementById('info');
-            infoPanel.innerHTML = `
-                <h2>${poi.name}</h2>
-                <p>${poi.description}</p>
-            `;
-        }
     </script>
 </body>
 </html>
