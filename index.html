@@ -93,25 +93,11 @@
             [parkCenter[0] + latDelta/2, parkCenter[1] + lonDelta/2]
         ];
 
-        // Create a custom pane for the dark overlay
-        map.createPane('darkOverlay');
-        map.getPane('darkOverlay').style.zIndex = 400;
-
-        // Add a dark overlay outside the focus area
-        L.rectangle([[-90, -180], [90, 180]], {
-            color: "black",
-            weight: 0,
-            fillOpacity: 0.7,
-            pane: 'darkOverlay'
-        }).addTo(map);
-
         // Clear the focus area
         L.rectangle(bounds, {
             color: "white",
             weight: 2,
             fillOpacity: 0,
-            pane: 'darkOverlay',
-            fillRule: 'evenodd'
         }).addTo(map);
 
         pointsOfInterest.forEach(poi => {
@@ -120,7 +106,7 @@
         });
 
         let userMarker, userCircle;
-        
+
         function onLocationFound(e) {
             const radius = e.accuracy / 2;
 
