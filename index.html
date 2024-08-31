@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Focused Virtual Park Walk-through - Amsterdamse Bos</title>
+    <title>Debugged Virtual Park Walk-through - Amsterdamse Bos</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
     <style>
@@ -30,71 +30,88 @@
             overflow-y: auto;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
-        .info-panel img {
-            max-width: 100%;
-            height: auto;
-            margin-top: 10px;
-        }
         .custom-icon {
             background-color: #4CAF50;
             border-radius: 50%;
             border: 2px solid #ffffff;
+        }
+        #debug-info {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            z-index: 1000;
+            background: rgba(255,255,255,0.8);
+            padding: 10px;
+            border-radius: 5px;
+            max-width: 300px;
+            max-height: 200px;
+            overflow-y: auto;
         }
     </style>
 </head>
 <body>
     <div id="map"></div>
     <div id="info" class="info-panel"></div>
+    <div id="debug-info"></div>
 
     <script>
-        // Configuration
-        const parkCenter = [52.340589, 4.814953];
-        const zoomLevel = 16; // Increased zoom level
+        function addDebugInfo(message) {
+            const debugInfo = document.getElementById('debug-info');
+            debugInfo.innerHTML += message + '<br>';
+        }
 
-        // Points of Interest
+        addDebugInfo('Script started');
+
+        const parkCenter = [52.340589, 4.814953];
+        const zoomLevel = 16;
+
         const pointsOfInterest = [
             {
                 name: "Point of Interest 1",
                 location: [52.34068518349773, 4.814967357627049],
                 description: "This is the first point of interest in Amsterdamse Bos.",
-                image: "https://via.placeholder.com/300x200.png?text=Point+of+Interest+1"
             },
             {
                 name: "Point of Interest 2",
                 location: [52.3408081232501, 4.816352161023659],
                 description: "This is the second point of interest in Amsterdamse Bos.",
-                image: "https://via.placeholder.com/300x200.png?text=Point+of+Interest+2"
             },
             {
                 name: "Point of Interest 3",
                 location: [52.341420489919074, 4.813434012011979],
                 description: "This is the third point of interest in Amsterdamse Bos.",
-                image: "https://via.placeholder.com/300x200.png?text=Point+of+Interest+3"
             },
             {
                 name: "Point of Interest 4",
                 location: [52.34023125357226, 4.814033551508082],
                 description: "This is the fourth point of interest in Amsterdamse Bos.",
-                image: "https://via.placeholder.com/300x200.png?text=Point+of+Interest+4"
             }
         ];
 
-        // Initialize map
+        addDebugInfo('Initializing map');
         const map = L.map('map', {
             center: parkCenter,
             zoom: zoomLevel,
-            maxBounds: L.latLngBounds(parkCenter).pad(0.05), // Restrict panning
-            minZoom: 15, // Restrict zooming out too far
-            maxZoom: 18 // Restrict zooming in too far
+            maxBounds: L.latLngBounds(parkCenter).pad(0.05),
+            minZoom: 15,
+            maxZoom: 18
         });
 
-        // Add OpenStreetMap tile layer
+        addDebugInfo('Map initialized');
+
+        addDebugInfo('Adding tile layer');
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors',
             maxZoom: 19
-        }).addTo(map);
+        }).addTo(map)
+        .on('tileerror', function(error, tile) {
+            addDebugInfo('Tile error: ' + JSON.stringify(error));
+        })
+        .on('load', function() {
+            addDebugInfo('Tiles loaded successfully');
+        });
 
-        // Add 2km radius circle
+        addDebugInfo('Adding 2km radius circle');
         L.circle(parkCenter, {
             color: 'red',
             fillColor: '#f03',
@@ -102,38 +119,51 @@
             radius: 2000
         }).addTo(map);
 
-        // Custom icon for markers
         const customIcon = L.divIcon({
             className: 'custom-icon',
             iconSize: [20, 20],
             iconAnchor: [10, 10]
         });
 
-        // Add markers for points of interest
+        addDebugInfo('Adding markers');
         pointsOfInterest.forEach(poi => {
             const marker = L.marker(poi.location, {icon: customIcon}).addTo(map);
             marker.on('click', () => showInfo(poi));
         });
 
-        // Show info when a marker is clicked
         function showInfo(poi) {
             const infoPanel = document.getElementById('info');
             infoPanel.innerHTML = `
                 <h2>${poi.name}</h2>
                 <p>${poi.description}</p>
-                <img src="${poi.image}" alt="${poi.name}">
             `;
         }
 
-        // Geolocation
         if ("geolocation" in navigator) {
+            addDebugInfo('Geolocation available');
             navigator.geolocation.watchPosition(position => {
                 const { latitude, longitude } = position.coords;
                 L.marker([latitude, longitude]).addTo(map)
                     .bindPopup('You are here')
                     .openPopup();
-            }, null, { enableHighAccuracy: true });
+                addDebugInfo('Geolocation updated');
+            }, (error) => {
+                addDebugInfo('Geolocation error: ' + error.message);
+            }, { enableHighAccuracy: true });
+        } else {
+            addDebugInfo('Geolocation not available');
         }
+
+        map.on('load', function() {
+            addDebugInfo('Map fully loaded');
+        });
+
+        setTimeout(() => {
+            map.invalidateSize();
+            addDebugInfo('Map size invalidated');
+        }, 100);
+
+        addDebugInfo('Script completed');
     </script>
 </body>
 </html>
