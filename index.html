@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Debugged Virtual Park Walk-through - Amsterdamse Bos</title>
+    <title>Fixed Virtual Park Walk-through - Amsterdamse Bos</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
     <style>
@@ -35,33 +35,13 @@
             border-radius: 50%;
             border: 2px solid #ffffff;
         }
-        #debug-info {
-            position: absolute;
-            bottom: 10px;
-            left: 10px;
-            z-index: 1000;
-            background: rgba(255,255,255,0.8);
-            padding: 10px;
-            border-radius: 5px;
-            max-width: 300px;
-            max-height: 200px;
-            overflow-y: auto;
-        }
     </style>
 </head>
 <body>
     <div id="map"></div>
     <div id="info" class="info-panel"></div>
-    <div id="debug-info"></div>
 
     <script>
-        function addDebugInfo(message) {
-            const debugInfo = document.getElementById('debug-info');
-            debugInfo.innerHTML += message + '<br>';
-        }
-
-        addDebugInfo('Script started');
-
         const parkCenter = [52.340589, 4.814953];
         const zoomLevel = 16;
 
@@ -88,30 +68,13 @@
             }
         ];
 
-        addDebugInfo('Initializing map');
-        const map = L.map('map', {
-            center: parkCenter,
-            zoom: zoomLevel,
-            maxBounds: L.latLngBounds(parkCenter).pad(0.05),
-            minZoom: 15,
-            maxZoom: 18
-        });
+        const map = L.map('map').setView(parkCenter, zoomLevel);
 
-        addDebugInfo('Map initialized');
-
-        addDebugInfo('Adding tile layer');
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors',
             maxZoom: 19
-        }).addTo(map)
-        .on('tileerror', function(error, tile) {
-            addDebugInfo('Tile error: ' + JSON.stringify(error));
-        })
-        .on('load', function() {
-            addDebugInfo('Tiles loaded successfully');
-        });
+        }).addTo(map);
 
-        addDebugInfo('Adding 2km radius circle');
         L.circle(parkCenter, {
             color: 'red',
             fillColor: '#f03',
@@ -125,7 +88,6 @@
             iconAnchor: [10, 10]
         });
 
-        addDebugInfo('Adding markers');
         pointsOfInterest.forEach(poi => {
             const marker = L.marker(poi.location, {icon: customIcon}).addTo(map);
             marker.on('click', () => showInfo(poi));
@@ -140,30 +102,13 @@
         }
 
         if ("geolocation" in navigator) {
-            addDebugInfo('Geolocation available');
             navigator.geolocation.watchPosition(position => {
                 const { latitude, longitude } = position.coords;
                 L.marker([latitude, longitude]).addTo(map)
                     .bindPopup('You are here')
                     .openPopup();
-                addDebugInfo('Geolocation updated');
-            }, (error) => {
-                addDebugInfo('Geolocation error: ' + error.message);
-            }, { enableHighAccuracy: true });
-        } else {
-            addDebugInfo('Geolocation not available');
+            }, null, { enableHighAccuracy: true });
         }
-
-        map.on('load', function() {
-            addDebugInfo('Map fully loaded');
-        });
-
-        setTimeout(() => {
-            map.invalidateSize();
-            addDebugInfo('Map size invalidated');
-        }, 100);
-
-        addDebugInfo('Script completed');
     </script>
 </body>
 </html>
