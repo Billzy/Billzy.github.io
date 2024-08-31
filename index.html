@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Focused Virtual Park Walk-through - Amsterdamse Bos</title>
+    <title>Improved Focused Virtual Park Walk-through - Amsterdamse Bos</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
     <style>
@@ -93,10 +93,29 @@
             [parkCenter[0] + latDelta/2, parkCenter[1] + lonDelta/2]
         ];
 
-        // Add a dark overlay to the entire map
-        L.rectangle([[-90, -180], [90, 180]], {color: "black", weight: 0, fillOpacity: 0.7}).addTo(map);
+        // Create a custom pane for the dark overlay
+        map.createPane('darkOverlay');
+        map.getPane('darkOverlay').style.zIndex = 400;
 
-        // Add a clear rectangle for the focus area
+        // Add a dark overlay outside the focus area
+        L.rectangle([[-90, -180], [90, 180]], {
+            color: "black",
+            weight: 0,
+            fillOpacity: 0.7,
+            pane: 'darkOverlay'
+        }).addTo(map);
+
+        // Create a mask for the focus area
+        L.rectangle(bounds, {
+            color: "black",
+            weight: 0,
+            fillOpacity: 1,
+            pane: 'darkOverlay',
+            fillRule: 'evenodd',
+            fill: 'url(#mask)'
+        }).addTo(map);
+
+        // Add a white border for the focus area
         L.rectangle(bounds, {color: "white", weight: 2, fillOpacity: 0}).addTo(map);
 
         pointsOfInterest.forEach(poi => {
@@ -123,6 +142,8 @@
                 fillColor: '#3af',
                 fillOpacity: 0.2
             }).addTo(map);
+
+            map.setView(e.latlng, zoomLevel);
         }
 
         function onLocationError(e) {
@@ -134,12 +155,29 @@
         map.on('locationerror', onLocationError);
 
         function requestLocation() {
-            map.locate({setView: true, maxZoom: 16, watch: true, maximumAge: 60000});
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        onLocationFound({latlng: L.latLng(lat, lon), accuracy: position.coords.accuracy});
+                    },
+                    function(error) {
+                        onLocationError(error);
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 5000,
+                        maximumAge: 0
+                    }
+                );
+            } else {
+                console.log("Geolocation is not supported by this browser.");
+            }
         }
 
         document.getElementById('permission-button').addEventListener('click', function() {
             requestLocation();
-            this.style.display = 'none';
         });
 
         // Initial location request
