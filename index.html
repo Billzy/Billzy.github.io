@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Map with Points of Interest</title>
-    <link href='https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css' rel='stylesheet' />
-    <script src='https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js'></script>
+    <title>3D Map with OpenLayers and Points of Interest</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol/ol.css">
+    <script src="https://cdn.jsdelivr.net/npm/ol/ol.js"></script>
     <style>
         body, html {
             height: 100%;
@@ -17,73 +17,77 @@
             height: 100%;
             width: 100%;
         }
-        .mapboxgl-popup-content {
-            text-align: center;
-            font-family: 'Open Sans', sans-serif;
+        .ol-popup {
+            position: absolute;
+            background-color: white;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #cccccc;
+            bottom: 12px;
+            left: -50px;
+            min-width: 280px;
         }
-        .mapboxgl-popup-content img {
-            max-width: 100%;
-            height: auto;
-            margin-bottom: 10px;
+        .ol-popup:after, .ol-popup:before {
+            top: 100%;
+            border: solid transparent;
+            content: " ";
+            height: 0;
+            width: 0;
+            position: absolute;
+            pointer-events: none;
+        }
+        .ol-popup:after {
+            border-top-color: white;
+            border-width: 10px;
+            left: 48px;
+            margin-left: -10px;
+        }
+        .ol-popup:before {
+            border-top-color: #cccccc;
+            border-width: 11px;
+            left: 48px;
+            margin-left: -11px;
+        }
+        .ol-popup-closer {
+            text-decoration: none;
+            position: absolute;
+            top: 2px;
+            right: 8px;
+        }
+        .ol-popup-closer:after {
+            content: "✖";
+        }
+        .map-marker {
+            background: url('https://cdn.jsdelivr.net/gh/mapbox/maki/icons/marker-15.svg') no-repeat center center;
+            background-size: cover;
+            width: 15px;
+            height: 15px;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
 
-    <div id="map"></div>
+    <div id="map" class="map"></div>
 
     <script>
-        mapboxgl.accessToken = 'pk.eyJ1IjoiamFja29saXZlcjEiLCJhIjoiY2l0MW16dGk4MDBhOTJ6bzMwdGk3a3ZiYyJ9.1kqTjPcjC9tbTXoZavar4A';
-
-        const map = new mapboxgl.Map({
-            container: 'map',
-            style: 'mapbox://styles/mapbox/streets-v12', // Mapbox style
-            center: [4.814953, 52.340589], // [longitude, latitude] of parkCenter
-            zoom: 16,
-            pitch: 60, // Tilt the map for 3D effect
-            bearing: -60 // Rotate the map
+        // Initialize the map with OpenLayers
+        const map = new ol.Map({
+            target: 'map',
+            layers: [
+                new ol.layer.Tile({
+                    source: new ol.source.OSM()
+                })
+            ],
+            view: new ol.View({
+                center: ol.proj.fromLonLat([4.814953, 52.340589]),
+                zoom: 16,
+                rotation: 0.5  // To simulate a 3D effect
+            })
         });
 
-        // Add zoom and rotation controls to the map
-        map.addControl(new mapboxgl.NavigationControl());
-
-        // Add 3D buildings layer
-        map.on('load', function () {
-            // Insert the layer beneath any symbol layer.
-            const layers = map.getStyle().layers;
-            let labelLayerId;
-            for (let i = 0; i < layers.length; i++) {
-                if (layers[i].type === 'symbol' && layers[i].layout['text-field']) {
-                    labelLayerId = layers[i].id;
-                    break;
-                }
-            }
-
-            map.addLayer({
-                'id': '3d-buildings',
-                'source': 'composite',
-                'source-layer': 'building',
-                'filter': ['==', 'extrude', 'true'],
-                'type': 'fill-extrusion',
-                'minzoom': 15,
-                'paint': {
-                    'fill-extrusion-color': '#aaa',
-                    'fill-extrusion-height': [
-                        'interpolate', ['linear'], ['zoom'],
-                        15, 0,
-                        15.05, ['get', 'height']
-                    ],
-                    'fill-extrusion-base': [
-                        'interpolate', ['linear'], ['zoom'],
-                        15, 0,
-                        15.05, ['get', 'min_height']
-                    ],
-                    'fill-extrusion-opacity': 0.6
-                }
-            }, labelLayerId);
-        });
-
-        // Define the points of interest with image and description
+        // Define points of interest
         const pointsOfInterest = [
             {
                 name: "Point of Interest 1",
@@ -111,25 +115,49 @@
             }
         ];
 
-        // Add markers to the map for each point of interest
+        // Add points to the map
         pointsOfInterest.forEach(poi => {
-            const el = document.createElement('div');
-            el.className = 'marker';
+            const marker = new ol.Overlay({
+                position: ol.proj.fromLonLat(poi.coordinates),
+                positioning: 'center-center',
+                element: document.createElement('div'),
+                stopEvent: false
+            });
 
-            new mapboxgl.Marker(el)
-                .setLngLat(poi.coordinates)
-                .setPopup(new mapboxgl.Popup({ offset: 25 }) // Add popups
-                    .setHTML(`
+            marker.getElement().className = 'map-marker';
+            map.addOverlay(marker);
+
+            marker.getElement().addEventListener('click', function() {
+                const popupContent = `
+                    <div class="ol-popup">
+                        <a href="#" class="ol-popup-closer"></a>
                         <h3>${poi.name}</h3>
                         <img src="${poi.image}" alt="${poi.name}">
                         <p>${poi.description}</p>
-                    `))
-                .addTo(map);
+                    </div>
+                `;
+                
+                const popupOverlay = new ol.Overlay({
+                    element: document.createElement('div'),
+                    position: ol.proj.fromLonLat(poi.coordinates),
+                    positioning: 'bottom-center',
+                    offset: [0, -10]
+                });
+                
+                popupOverlay.getElement().innerHTML = popupContent;
+                map.addOverlay(popupOverlay);
+
+                // Close button functionality
+                popupOverlay.getElement().querySelector('.ol-popup-closer').onclick = function() {
+                    map.removeOverlay(popupOverlay);
+                    return false;
+                };
+            });
         });
 
-        // Event listener for adding new points
-        map.on('click', function (e) {
-            const coordinates = e.lngLat;
+        // Add a click event to add new points
+        map.on('singleclick', function(event) {
+            const coordinates = ol.proj.toLonLat(event.coordinate);
             const name = prompt("Enter the name for this point:");
             const description = prompt("Enter a description for this point:");
             const imageUrl = prompt("Enter the image URL for this point:");
@@ -137,22 +165,48 @@
             if (name && description && imageUrl) {
                 const newPoi = {
                     name: name,
-                    coordinates: [coordinates.lng, coordinates.lat],
+                    coordinates: coordinates,
                     description: description,
                     image: imageUrl
                 };
 
                 pointsOfInterest.push(newPoi);
 
-                new mapboxgl.Marker()
-                    .setLngLat(newPoi.coordinates)
-                    .setPopup(new mapboxgl.Popup({ offset: 25 })
-                        .setHTML(`
+                const marker = new ol.Overlay({
+                    position: event.coordinate,
+                    positioning: 'center-center',
+                    element: document.createElement('div'),
+                    stopEvent: false
+                });
+
+                marker.getElement().className = 'map-marker';
+                map.addOverlay(marker);
+
+                marker.getElement().addEventListener('click', function() {
+                    const popupContent = `
+                        <div class="ol-popup">
+                            <a href="#" class="ol-popup-closer"></a>
                             <h3>${newPoi.name}</h3>
                             <img src="${newPoi.image}" alt="${newPoi.name}">
                             <p>${newPoi.description}</p>
-                        `))
-                    .addTo(map);
+                        </div>
+                    `;
+                    
+                    const popupOverlay = new ol.Overlay({
+                        element: document.createElement('div'),
+                        position: event.coordinate,
+                        positioning: 'bottom-center',
+                        offset: [0, -10]
+                    });
+                    
+                    popupOverlay.getElement().innerHTML = popupContent;
+                    map.addOverlay(popupOverlay);
+
+                    popupOverlay.getElement().querySelector('.ol-popup-closer').onclick = function() {
+                        map.removeOverlay(popupOverlay);
+                        return false;
+                    };
+                });
             }
         });
     </script>
